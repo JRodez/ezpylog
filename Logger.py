@@ -59,27 +59,32 @@ class noncolor:
 
 
 class Logger:
-    def __init__(self,  min_level: LogLevel = LogLevel.INFO, contextprefix="", file_name="stdout", errorfile_name="stderr"):
+    def __init__(self,  min_level: LogLevel = LogLevel.INFO, contextprefix="", logfile="stdout", errorlogfile="stderr"):
 
         self.min_level = min_level
-        self.file_name = file_name
-        self.errorfile_name = errorfile_name
+
+       
         self.contextprefix = ""
         if contextprefix != "":
             self.contextprefix = contextprefix
 
-        if self.file_name == "stdout":
+        if logfile == "stdout":
             self.file = sys.stdout
+        elif isinstance(errorlogfile, str):
+            self.file = open(logfile, 'w')
         else:
-            self.file = open(file_name, 'w')
+            self.file = logfile
 
-        if self.errorfile_name != self.file_name:
-            if errorfile_name == "stderr":
+        if errorlogfile != logfile:
+            if errorlogfile == "stderr":
                 self.errorfile = sys.stderr
+            elif isinstance(errorlogfile, str):
+                self.errorfile = open(errorlogfile, 'w')
             else:
-                self.errorfile = open(errorfile_name, 'w')
+                self.errorfile = errorlogfile
         else:
             self.errorfile = self.file
+
         self.colormanager = bcolors if self.file in [
             sys.stdout, sys.stderr] and self.errorfile in [sys.stdout, sys.stderr] else noncolor
 
