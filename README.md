@@ -1,4 +1,4 @@
-# ezpylog
+# Ezpylog
 Minimalistic and easy to use python logger
 
 ## How to use ?
