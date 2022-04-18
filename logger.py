@@ -148,9 +148,9 @@ def loggerdemo():
 
     a = 1234567
 
-    logger = Logger()
+    logger = Logger(LogLevel.DEBUG)
     logger.log("Debug message", LogLevel.DEBUG, "context")
-    logger.log("Info message", LogLevel.INFO, "context")
+    logger.log("Info message")
     logger.log("Warning message", LogLevel.WARNING, "context")
     logger.log(f"Error message {a}", LogLevel.ERROR, "context")
     logger.log("Critical message", LogLevel.CRITICAL, "context")
@@ -166,4 +166,4 @@ def loggerdemo():
 
     print()
 
-
+loggerdemo()
