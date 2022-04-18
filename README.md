@@ -47,9 +47,9 @@ from logger import Logger, LogLevel
 
 a = 1234567
 
-logger = Logger()
+logger = Logger(LogLevel.DEBUG)
 logger.log("Debug message", LogLevel.DEBUG, "context")
-logger.log("Info message", LogLevel.INFO, "context")
+logger.log("Info message")
 logger.log("Warning message", LogLevel.WARNING, "context")
 logger.log(f"Error message {a}", LogLevel.ERROR, "context")
 logger.log("Critical message", LogLevel.CRITICAL, "context")
@@ -64,4 +64,4 @@ logger2.log("Critical message", LogLevel.CRITICAL)
 
 prints the following : 
 
-![image](https://user-images.githubusercontent.com/80471345/163833341-8036c41f-333b-4fc9-987d-3475a509396a.png)
+![image](https://user-images.githubusercontent.com/80471345/163835427-f5b3306f-9ebe-46d4-9da6-1e5413f8af0e.png)
