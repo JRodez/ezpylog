@@ -166,4 +166,5 @@ def loggerdemo():
 
     print()
 
-loggerdemo()
+if __name__ == "__main__":
+    loggerdemo()
