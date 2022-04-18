@@ -1,26 +1,31 @@
-import sys
-import enum
-from datetime import datetime
-
 # MIT Licence :
 # https://opensource.org/licenses/MIT
 
-# Copyright 2022 Jérémie RODEZ
+###########################################################################################################################
+#                                                                                                                         #
+# Copyright 2022 Jérémie RODEZ                                                                                            #
+#                                                                                                                         #
+# Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated            #
+# documentation files (the "Software"), to deal in the Software without restriction, including without limitation         #
+# the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and        #
+# to permit persons to whom the Software is furnished to do so, subject to the following conditions:                      #
+#                                                                                                                         #
+# The above copyright notice and this permission notice shall be included in all copies or substantial portions           #
+# of the Software.                                                                                                        #
+#                                                                                                                         #
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO        #
+# THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE          #
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,     #
+# TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE          #
+# SOFTWARE.                                                                                                               #
+#                                                                                                                         #
+###########################################################################################################################
 
-# Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
-# documentation files (the "Software"), to deal in the Software without restriction, including without limitation
-# the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and
-# to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
-# The above copyright notice and this permission notice shall be included in all copies or substantial portions
-# of the Software.
 
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
-# THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-# TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
-
+import sys
+import enum
+from datetime import datetime
 
 
 class LogLevel(enum.Enum):
@@ -94,19 +99,19 @@ class Logger:
 
             elif level == LogLevel.ERROR:
                 self.errorfile.write(
-                    f"{now} | {self.colormanager.ERROR}[ERROR]{self.colormanager.ENDC} {contextmsg} {msg}\n")
+                    f"{now} | {self.colormanager.ERROR}[ERROR]   {self.colormanager.ENDC} {contextmsg} {msg}\n")
 
             elif level == LogLevel.WARNING:
                 self.file.write(
-                    f"{now} | {self.colormanager.WARNING}[WARNING]{self.colormanager.ENDC} {contextmsg} {msg}\n")
+                    f"{now} | {self.colormanager.WARNING}[WARNING] {self.colormanager.ENDC} {contextmsg} {msg}\n")
 
             elif level == LogLevel.INFO:
                 self.file.write(
-                    f"{now} | {self.colormanager.INFO}[INFO]{self.colormanager.ENDC} {contextmsg} {msg}\n")
+                    f"{now} | {self.colormanager.INFO}[INFO]    {self.colormanager.ENDC} {contextmsg} {msg}\n")
 
             elif level == LogLevel.DEBUG:
                 self.file.write(
-                    f"{now} | {self.colormanager.DEBUG}[DEBUG]{self.colormanager.ENDC} {contextmsg} {msg}\n")
+                    f"{now} | {self.colormanager.DEBUG}[DEBUG]   {self.colormanager.ENDC} {contextmsg} {msg}\n")
 
             else:
                 raise Exception('Unknown log level')
@@ -136,10 +141,29 @@ class Logger:
         self.close()
 
 
-logger = Logger(file_name="stdout", errorfile_name="stderr")
 
-# logger.log("Debug message",LogLevel.DEBUG)
-# logger.log("Info message",LogLevel.INFO)
-# logger.log("Warning message",LogLevel.WARNING)
-# logger.log("Error message",LogLevel.ERROR)
-# logger.log("Critical message",LogLevel.CRITICAL)
+
+def loggerdemo():
+    print()
+
+    a = 1234567
+
+    logger = Logger()
+    logger.log("Debug message", LogLevel.DEBUG, "context")
+    logger.log("Info message", LogLevel.INFO, "context")
+    logger.log("Warning message", LogLevel.WARNING, "context")
+    logger.log(f"Error message {a}", LogLevel.ERROR, "context")
+    logger.log("Critical message", LogLevel.CRITICAL, "context")
+
+    print()
+
+    logger2 = Logger(LogLevel.WARNING, "__main__")
+    logger2.log("Debug message", LogLevel.DEBUG, "subcontextA()")
+    logger2.log("Info message", LogLevel.INFO, "subcontextB()")
+    logger2.log("Warning message", LogLevel.WARNING, "subcontextA()")
+    logger2.log(f"Error message {a}", LogLevel.ERROR, "subcontextB()")
+    logger2.log("Critical message", LogLevel.CRITICAL)
+
+    print()
+
+
