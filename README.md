@@ -39,7 +39,7 @@ logger.log(msg, level, subcontext)
 ```
 with default `level = LogLevel.INFO` and `subcontext = ""`
 
-### Example :
+## Example :
 You can find this exemple by calling `Logger.loggerdemo()`
 
 ```python
