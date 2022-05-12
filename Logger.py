@@ -22,7 +22,6 @@
 ###########################################################################################################################
 
 
-
 import sys
 import enum
 from datetime import datetime
@@ -63,7 +62,6 @@ class Logger:
 
         self.min_level = min_level
 
-       
         self.contextprefix = ""
         if contextprefix != "":
             self.contextprefix = contextprefix
@@ -97,29 +95,31 @@ class Logger:
             contextmsg = f"{self.colormanager.CONTEXT}[from {contextstr}]{self.colormanager.ENDC}" if contextstr != "" else ""
 
             now = datetime.now().strftime("%H:%M:%S")
+            for i, line in enumerate(msg.split("\n")):
+                space = '> ' if i != 0 else ''
 
-            if level == LogLevel.CRITICAL:
-                self.errorfile.write(
-                    f"{now} | {self.colormanager.CRITICAL}[CRITICAL]{self.colormanager.ENDC} {contextmsg} {self.colormanager.ERROR}{msg}{self.colormanager.ENDC}\n")
+                if level == LogLevel.CRITICAL:
+                    self.errorfile.write(
+                        f"{now} | {self.colormanager.CRITICAL}[CRITICAL]{self.colormanager.ENDC} {contextmsg} {self.colormanager.ERROR}{space}{line}{self.colormanager.ENDC}\n")
 
-            elif level == LogLevel.ERROR:
-                self.errorfile.write(
-                    f"{now} | {self.colormanager.ERROR}[ERROR]   {self.colormanager.ENDC} {contextmsg} {msg}\n")
+                elif level == LogLevel.ERROR:
+                    self.errorfile.write(
+                        f"{now} | {self.colormanager.ERROR}[ERROR]   {self.colormanager.ENDC} {contextmsg} {space}{line}\n")
 
-            elif level == LogLevel.WARNING:
-                self.file.write(
-                    f"{now} | {self.colormanager.WARNING}[WARNING] {self.colormanager.ENDC} {contextmsg} {msg}\n")
+                elif level == LogLevel.WARNING:
+                    self.file.write(
+                        f"{now} | {self.colormanager.WARNING}[WARNING] {self.colormanager.ENDC} {contextmsg} {space}{line}\n")
 
-            elif level == LogLevel.INFO:
-                self.file.write(
-                    f"{now} | {self.colormanager.INFO}[INFO]    {self.colormanager.ENDC} {contextmsg} {msg}\n")
+                elif level == LogLevel.INFO:
+                    self.file.write(
+                        f"{now} | {self.colormanager.INFO}[INFO]    {self.colormanager.ENDC} {contextmsg} {space}{line}\n")
 
-            elif level == LogLevel.DEBUG:
-                self.file.write(
-                    f"{now} | {self.colormanager.DEBUG}[DEBUG]   {self.colormanager.ENDC} {contextmsg} {msg}\n")
+                elif level == LogLevel.DEBUG:
+                    self.file.write(
+                        f"{now} | {self.colormanager.DEBUG}[DEBUG]   {self.colormanager.ENDC} {contextmsg} {space}{line}\n")
 
-            else:
-                raise Exception('Unknown log level')
+                else:
+                    raise Exception('Unknown log level')
             self.file.flush()
 
     def debug(self, msg, context=""):
@@ -146,15 +146,13 @@ class Logger:
         self.close()
 
 
-
-
 def loggerdemo():
     print()
 
     a = 1234567
 
     logger = Logger(LogLevel.DEBUG)
-    logger.log("Debug message", LogLevel.DEBUG, "context")
+    logger.log("Debug message\non\nmultiple\nline", LogLevel.DEBUG, "context")
     logger.log("Info message")
     logger.log("Warning message", LogLevel.WARNING, "context")
     logger.log(f"Error message {a}", LogLevel.ERROR, "context")
@@ -170,6 +168,7 @@ def loggerdemo():
     logger2.log("Critical message", LogLevel.CRITICAL)
 
     print()
+
 
 if __name__ == "__main__":
     loggerdemo()
