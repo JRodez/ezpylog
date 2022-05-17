@@ -1,5 +1,9 @@
-# Ezpylog
-Minimalistic and easy to use python logger
+# Welcome
+ezpylog is a minimalistic and easy to use python logger
+## Installation
+Using pip :
+ - directly from command line with : `pip install ezpylog` 
+ - manually by [downloading ezpylog](https://github.com/JRodez/ezpylog/releases) and install it with `pip install ezpylog-X.X.tar.gz`
 
 ## How to use ?
 ### Import :
