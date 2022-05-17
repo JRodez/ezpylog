@@ -43,7 +43,7 @@ with default `level = LogLevel.INFO` and `subcontext = ""`
 You can find this exemple by calling `Logger.loggerdemo()`
 
 ```python
-from logger import Logger, LogLevel
+from ezpylog import Logger, LogLevel
 
 a = 1234567
 
