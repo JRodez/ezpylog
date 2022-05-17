@@ -12,7 +12,7 @@ setup(
     url='https://github.com/JRodez/ezpylog',
     keywords='tool print ezpylog logger logging log level debug info warning error critical color terminal cli magnificient colorful beautiful filter filter_by_level filter_by_context filter_by_message',
     install_requires=[
-        'enum', 'datetime'
+        # 'enum', 'datetime'
     ], classifiers=[
         # How mature is this project? Common values are
         #   3 - Alpha
