@@ -6,7 +6,7 @@ Minimalistic and easy to use python logger
 Import logger.py the way you want, personnaly I do : 
 
 ```python
-from logger import Logger, LogLevel
+from ezpylog import Logger, LogLevel
 ```
 
 ### Logging Levels :
