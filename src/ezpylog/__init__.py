@@ -91,6 +91,12 @@ class Logger:
         :param `level`: The level of the message.
         :param `context`: The context of the message.
         """
+        if type(msg) is not str:
+            try:
+                msg = str(msg)
+            except:
+                raise ValueError(
+                    'msg must be a string or convertable to a string')
 
         if level.value >= self.min_level.value:
             sep = "." if self._contextprefix != "" and context != "" else ""
