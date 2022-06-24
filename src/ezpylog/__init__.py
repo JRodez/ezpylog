@@ -1,11 +1,57 @@
 # Copyright 2022, JRodez <jeremierodez@outlook.com>
-
+import os
+from platform import python_version
 import inspect
 import sys
 import enum
 from datetime import datetime
 from abc import ABC
 import logging
+
+OLD_PYTHON = True if int(python_version().split('.')[1]) < 8 else False
+# OLD_PYTHON = True
+
+if hasattr(sys, '_getframe'):
+    def currentframe(): return sys._getframe(3)
+_srcfile = os.path.normcase(currentframe.__code__.co_filename)
+
+
+def get_caller_name():
+    stack = inspect.stack()
+    fn = stack[1].filename
+    fn = fn.split("/")
+    if len(fn) <= 1:
+        fn = fn[-1].split("\\")
+    fn = fn[-1]
+    return fn
+
+
+def findCallerPatch(self):
+    """
+    Find the stack frame of the caller so that we can note the source
+    file name, line number and function name.
+    """
+    f = currentframe()
+    if f is not None:
+        f = f.f_back
+    rv = "(unknown file)", 0, "(unknown function)", None
+    while hasattr(f, "f_code"):
+        co = f.f_code
+        filename = os.path.normcase(co.co_filename)
+        if filename == _srcfile:
+            f = f.f_back
+            continue
+        rv = (co.co_filename, f.f_lineno, co.co_name, None)
+        break
+    return rv
+
+
+class LogLevel:
+    DEBUG = logging.DEBUG
+    INFO = logging.INFO
+    WARNING = logging.WARNING
+    ERROR = logging.ERROR
+    CRITICAL = logging.CRITICAL
 
 
 class colors:
@@ -77,6 +123,12 @@ class EzpylogColoredFormatter(logging.Formatter):
         if not hasattr(record, 'msgsuffix'):
             record.msgsuffix = self.LOG_LEVEL_COLOR.get(
                 record.levelname.upper()).get('msgsuffix')
+
+        if not hasattr(record, 'module'):
+            record.module = get_caller_name()[0]
+        if not hasattr(record, 'funcName'):
+            record.funcName = get_caller_name()[1]
+
         formatter = logging.Formatter(self.FORMAT, "%d-%m-%y %H:%M:%S")
         return formatter.format(record)
 
@@ -102,6 +154,9 @@ class Logger(object):
         self._logger: logging.Logger = logging.getLogger(
         ) if name is None else logging.getLogger(name)
 
+        if OLD_PYTHON:
+            self._logger.findCaller = findCallerPatch
+
         self._handler = logging.Handler()
         self._handler.setFormatter(EzpylogFormatter())
 
@@ -111,11 +166,18 @@ class Logger(object):
         self._logger.addHandler(self.stream_handler)
 
         if logfile is not None:
-            self._file_handler = logging.FileHandler(logfile, mode='a', encoding='utf-8')
+            self._file_handler = logging.FileHandler(
+                logfile, mode='a', encoding='utf-8')
             self._file_handler.setFormatter(EzpylogFormatter())
             self._logger.addHandler(self._file_handler)
 
         self._logger.setLevel(min_level)
+
+    def set_level(self, level: int):
+        """ Set the minimum level of log to be displayed.
+        :param `level`: The minimum level of log to be displayed.
+        """
+        self._logger.setLevel(level)
 
     def log(self, msg, level: int = logging.INFO):
         """ Log a message. 
@@ -137,7 +199,10 @@ class Logger(object):
         splitted = text.split("\n")
         for line in splitted:
             space = '> ' if len(splitted) > 1 else ''
-            self._logger.log(level, f"{space}{line}", stacklevel=2)
+            if OLD_PYTHON:
+                self._logger.log(level, f"{space}{line}")
+            else:
+                self._logger.log(level, f"{space}{line}", stacklevel=2)
 
     def getLogger(self):
         return self._logger
@@ -171,7 +236,8 @@ def loggerdemo():
 
     a = 1234567
 
-    logger = Logger("TestLogger", min_level=logging.DEBUG, logfile="./src/ezpylog/log.txt")
+    logger = Logger("TestLogger", min_level=logging.DEBUG,
+                    logfile="log.txt")
     logger.log("Debug message\non\nmultiple\nline", logging.DEBUG)
     logger.log("Info message")
     logger.log("Warning message", logging.WARNING)
@@ -182,7 +248,7 @@ def loggerdemo():
     print("", flush=True)
 
     logger2 = Logger(__name__, logging.WARNING,
-                     color_on_console=False, logfile="./src/ezpylog/log.txt")
+                     color_on_console=False, logfile="log.txt")
     logger2.log("Debug message", logging.DEBUG)
     logger2.log("Info message", logging.INFO)
     logger2.log("Warning message", logging.WARNING)
