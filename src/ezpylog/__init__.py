@@ -1,158 +1,151 @@
 # Copyright 2022, JRodez <jeremierodez@outlook.com>
 
+import inspect
 import sys
 import enum
 from datetime import datetime
 from abc import ABC
+import logging
 
 
-class LogLevel(enum.Enum):
-    """ Enum for log levels """
-    DEBUG = 0
-    INFO = 1
-    WARNING = 2
-    ERROR = 3
-    CRITICAL = 4
-
-
-class colorbase(ABC):
-    DEBUG = ''
-    INFO = ''
-    WARNING = ''
-    ERROR = ''
-    CRITICAL = ''
-    CRITICALMSG = ''
-    CONTEXT = ''
-    ENDC = ''
-
-
-class bcolors(colorbase):
+class colors:
+    NEUTRAL = "\033[97m"
     DEBUG = '\033[94m'
     INFO = '\033[92m'
     WARNING = '\033[93m'
     ERROR = '\033[91m'
     CRITICAL = '\033[1m\033[91m'
-    CRITICALMSG = '\033[4m'
+    CRITICALMSG = '\033[4m\033[91m'
     CONTEXT = '\033[96m'
     ENDC = '\033[0m'
 
 
-class noncolor(colorbase):
-    DEBUG = ''
-    INFO = ''
-    WARNING = ''
-    ERROR = ''
-    CRITICAL = ''
-    CRITICALMSG = ''
-    CONTEXT = ''
-    ENDC = ''
+SUPPORTED_TYPES = [str, dict]
 
 
-class Logger:
-    def __init__(self,  min_level: LogLevel = LogLevel.INFO, contextprefix="", logfile="stdout", errorlogfile="stderr"):
-        """ Initialize the logger. 
+def dict_to_str(collection: dict, indent=0):
+    return_string = ['{\n']
+    if isinstance(collection, dict):
+        for key, value in collection.items():
+            if isinstance(value, dict) or isinstance(value, list):
+                value = dict_to_str(value, indent + 1)
+            else:
+                value = repr(value)
+
+            return_string.append('%s%r: %s,\n' % ('  ' * indent, key, value))
+        return_string.append('%s}' % ('  ' * indent))
+        return ''.join(return_string)
+
+    elif isinstance(collection, list):
+        for value in collection:
+            if isinstance(value, dict) or isinstance(value, list):
+                value = dict_to_str(value, indent + 1)
+            else:
+                value = repr(value)
+            return_string.append('%s%s,\n' % ('  ' * indent, value))
+        return_string.append('%s]' % ('  ' * indent))
+        return ''.join(return_string)
+
+
+class EzpylogFormatter(logging.Formatter):
+    """A class for formatting colored logs."""
+
+    LOG_LEVEL_COLOR = {
+        "DEBUG": {'lvlprefix': colors.DEBUG, 'lvlsuffix': colors.ENDC, 'msgprefix': "", 'msgsuffix':  colors.ENDC},
+        "INFO": {'lvlprefix': colors.INFO, 'lvlsuffix': colors.ENDC, 'msgprefix': "", 'msgsuffix':  colors.ENDC},
+        "WARNING": {'lvlprefix': colors.WARNING, 'lvlsuffix': colors.ENDC, 'msgprefix': "", 'msgsuffix':  colors.ENDC},
+        "ERROR": {'lvlprefix': colors.ERROR, 'lvlsuffix': colors.ENDC, 'msgprefix': colors.ERROR, 'msgsuffix':  colors.ENDC},
+        "CRITICAL": {'lvlprefix': colors.CRITICAL, 'lvlsuffix': colors.ENDC, 'msgprefix': colors.CRITICALMSG, 'msgsuffix':  colors.ENDC},
+    }
+
+    # FORMAT = f"%(asctime)s | %(lvlprefix)s[%(levelname)s]%(lvlsuffix)s {bcolors.CONTEXT}[%(module)s.%(funcName)s]{bcolors.ENDC} %(msgprefix)s%(message)s%(msgsuffix)s"
+    FORMAT = f"%(asctime)s %(lvlprefix)s[%(levelname)s]%(lvlsuffix)s {colors.CONTEXT}[%(module)s.%(funcName)s]{colors.ENDC} %(msgprefix)s%(message)s%(msgsuffix)s"
+
+    def format(self, record):
+        """Format log records with a default lvlprefix and lvlsuffix to terminal color codes that corresponds to the log level name."""
+        if not hasattr(record, 'lvlprefix'):
+            record.lvlprefix = self.LOG_LEVEL_COLOR.get(
+                record.levelname.upper()).get('lvlprefix')
+
+        if not hasattr(record, 'lvlsuffix'):
+            record.lvlsuffix = self.LOG_LEVEL_COLOR.get(
+                record.levelname.upper()).get('lvlsuffix')
+        if not hasattr(record, 'msgprefix'):
+            record.msgprefix = self.LOG_LEVEL_COLOR.get(
+                record.levelname.upper()).get('msgprefix')
+
+        if not hasattr(record, 'msgsuffix'):
+            record.msgsuffix = self.LOG_LEVEL_COLOR.get(
+                record.levelname.upper()).get('msgsuffix')
+        formatter = logging.Formatter(self.FORMAT, "%d-%m-%y %H:%M:%S")
+        return formatter.format(record)
+
+
+class Logger(object):
+    def __init__(self, name=None,  min_level: int = logging.WARNING, logfile: str = None):
+        """ Initialize the logger.
         :param `min_level`: The minimum level of log to be displayed.
-        :param `contextprefix`: The prefix to be added to the context.
         :param `logfile`: The file to log to.
-        :param `errorlogfile`: The file to log errors to.
         """
 
-        if not isinstance(min_level, LogLevel):
-            raise ValueError('min_level must be a LogLevel')
-        self.min_level: LogLevel = min_level
+        if not isinstance(min_level, int):
+            raise ValueError('min_level must be a int')
+        self._logger: logging.Logger = logging.getLogger(
+        ) if name is None else logging.getLogger(name)
 
-        self._contextprefix = ""
-        if contextprefix != "":
-            self._contextprefix = contextprefix
+        self.stream_handler = logging.StreamHandler()
+        self.stream_handler.setFormatter(EzpylogFormatter())
+        self._logger.addHandler(self.stream_handler)
 
-        if logfile == "stdout":
-            self._file = sys.stdout
-        elif isinstance(errorlogfile, str):
-            self._file = open(logfile, 'w')
-        else:
-            self._file = logfile
+        if logfile is not None:
+            self._logger.addHandler(logging.FileHandler(logfile))
 
-        if errorlogfile != logfile:
-            if errorlogfile == "stderr":
-                self._errorfile = sys.stderr
-            elif isinstance(errorlogfile, str):
-                self._errorfile = open(errorlogfile, 'w')
-            else:
-                self._errorfile = errorlogfile
-        else:
-            self._errorfile = self._file
+        self._logger.setLevel(min_level)
 
-        self._colormanager: colorbase = bcolors if self._file in [
-            sys.stdout, sys.stderr] and self._errorfile in [sys.stdout, sys.stderr] else noncolor
-
-    def log(self, msg, level: LogLevel = LogLevel.INFO, context=""):
+    def log(self, msg, level: int = logging.INFO):
         """ Log a message. 
         :param `msg`: The message to be logged.
         :param `level`: The level of the message.
         :param `context`: The context of the message.
         """
-        if type(msg) is not str:
+
+        if type(msg) not in SUPPORTED_TYPES:
             try:
-                msg = str(msg)
+                text = str(msg)
             except:
                 raise ValueError(
-                    'msg must be a string or convertable to a string')
+                    f"msg must be {SUPPORTED_TYPES.join(', ')} or convertable to a string")
+        elif type(msg) is dict:
+            text = dict_to_str(msg)
+        else:
+            text = msg
+        splitted = text.split("\n")
+        for line in splitted:
+            space = '> ' if len(splitted) > 1 else ''
+            self._logger.log(level, f"{space}{line}", stacklevel=2)
 
-        if level.value >= self.min_level.value:
-            sep = "." if self._contextprefix != "" and context != "" else ""
-            contextprefix = self._contextprefix if self._contextprefix != "" else ""
-            context = context if context != "" else ""
-            contextstr = (f"{contextprefix}{sep}{context}")
-            contextmsg = f"{self._colormanager.CONTEXT}[{contextstr}]{self._colormanager.ENDC}" if contextstr != "" else ""
+    def getLogger(self):
+        return self._logger
 
-            now = datetime.now().strftime("%H:%M:%S")
-            splitted = msg.split("\n")
-            for line in splitted:
-                space = '> ' if len(splitted) > 1 else ''
+    def debug(self, msg=""):
+        self.log(msg, logging.DEBUG)
 
-                if level == LogLevel.CRITICAL:
-                    self._errorfile.write(
-                        f"{now} | {self._colormanager.CRITICAL}[CRITICAL]{self._colormanager.ENDC} {contextmsg} {self._colormanager.ERROR}{space}{line}{self._colormanager.ENDC}\n")
+    def info(self, msg=""):
+        self.log(msg, logging.INFO)
 
-                elif level == LogLevel.ERROR:
-                    self._errorfile.write(
-                        f"{now} | {self._colormanager.ERROR}[ERROR]{self._colormanager.ENDC} {contextmsg} {space}{line}\n")
+    def warning(self, msg=""):
+        self.log(msg, logging.WARNING)
 
-                elif level == LogLevel.WARNING:
-                    self._file.write(
-                        f"{now} | {self._colormanager.WARNING}[WARNING]{self._colormanager.ENDC} {contextmsg} {space}{line}\n")
+    def error(self, msg=""):
+        self.log(msg, logging.ERROR)
 
-                elif level == LogLevel.INFO:
-                    self._file.write(
-                        f"{now} | {self._colormanager.INFO}[INFO]{self._colormanager.ENDC} {contextmsg} {space}{line}\n")
-
-                elif level == LogLevel.DEBUG:
-                    self._file.write(
-                        f"{now} | {self._colormanager.DEBUG}[DEBUG]{self._colormanager.ENDC} {contextmsg} {space}{line}\n")
-
-                else:
-                    raise Exception('Unknown log level')
-            self._file.flush()
-
-    def debug(self, msg, context=""):
-        self.log(msg, LogLevel.DEBUG, context)
-
-    def info(self, msg, context=""):
-        self.log(msg, LogLevel.INFO, context)
-
-    def warning(self, msg, context=""):
-        self.log(msg, LogLevel.WARNING, context)
-
-    def error(self, msg, context=""):
-        self.log(msg, LogLevel.ERROR, context)
-
-    def critical(self, msg, context=""):
-        self.log(msg, LogLevel.CRITICAL, context)
+    def critical(self, msg=""):
+        self.log(msg, logging.CRITICAL)
 
     def close(self):
-        if self._file != self._errorfile:
-            self._errorfile.close()
-        self._file.close()
+        for handler in self._logger.handlers:
+            handler.close()
+            self._logger.removeHandler(handler)
 
     def __del__(self):
         self.close()
@@ -163,22 +156,22 @@ def loggerdemo():
 
     a = 1234567
 
-    logger = Logger(LogLevel.DEBUG)
-    logger.log("Debug message\non\nmultiple\nline", LogLevel.DEBUG, "context")
+    logger = Logger("TestLogger", min_level=logging.DEBUG)
+    logger.log("Debug message\non\nmultiple\nline", logging.DEBUG)
     logger.log("Info message")
-    logger.log("Warning message", LogLevel.WARNING, "context")
-    logger.log(f"Error message {a}", LogLevel.ERROR, "context")
-    logger.log("Critical message", LogLevel.CRITICAL, "context")
+    logger.log("Warning message", logging.WARNING)
+    logger.log(f"Error message {a}", logging.ERROR)
+    logger.log("Critical message", logging.CRITICAL)
 
     print()
 
-    logger2 = Logger(LogLevel.WARNING, "__main__")
-    logger2.log("Debug message", LogLevel.DEBUG, "subcontextA()")
-    logger2.log("Info message", LogLevel.INFO, "subcontextB()")
-    logger2.log("Warning message", LogLevel.WARNING, "subcontextA()")
-    logger2.log(f"Error message {a}", LogLevel.ERROR, "subcontextB()")
-    logger2.log("Critical message", LogLevel.CRITICAL)
-
+    logger2 = Logger(__name__, logging.WARNING,)
+    logger2.log("Debug message", logging.DEBUG)
+    logger2.log("Info message", logging.INFO)
+    logger2.log("Warning message", logging.WARNING)
+    logger2.log(f"Error message {a}", logging.ERROR)
+    logger2.log("Critical message", logging.CRITICAL)
+    logger.debug({})
     print()
 
 
