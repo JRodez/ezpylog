@@ -47,7 +47,7 @@ def dict_to_str(collection: dict, indent=0):
         return ''.join(return_string)
 
 
-class EzpylogFormatter(logging.Formatter):
+class EzpylogColoredFormatter(logging.Formatter):
     """A class for formatting colored logs."""
 
     LOG_LEVEL_COLOR = {
@@ -81,24 +81,39 @@ class EzpylogFormatter(logging.Formatter):
         return formatter.format(record)
 
 
+class EzpylogFormatter(logging.Formatter):
+    """A class for formatting logs."""
+
+    FORMAT = f"%(asctime)s [%(levelname)s] [%(module)s.%(funcName)s] %(message)s"
+
+    def format(self, record):
+        formatter = logging.Formatter(self.FORMAT, "%d-%m-%y %H:%M:%S")
+        return formatter.format(record)
+
+
 class Logger(object):
-    def __init__(self, name=None,  min_level: int = logging.WARNING, logfile: str = None):
+    def __init__(self, name=None,  min_level: int = logging.WARNING, logfile: str = None, color_on_console: bool = True):
         """ Initialize the logger.
         :param `min_level`: The minimum level of log to be displayed.
         :param `logfile`: The file to log to.
         """
-
         if not isinstance(min_level, int):
             raise ValueError('min_level must be a int')
         self._logger: logging.Logger = logging.getLogger(
         ) if name is None else logging.getLogger(name)
 
+        self._handler = logging.Handler()
+        self._handler.setFormatter(EzpylogFormatter())
+
         self.stream_handler = logging.StreamHandler()
-        self.stream_handler.setFormatter(EzpylogFormatter())
+        self.stream_handler.setFormatter(EzpylogColoredFormatter(
+        )) if color_on_console else self.stream_handler.setFormatter(EzpylogFormatter())
         self._logger.addHandler(self.stream_handler)
 
         if logfile is not None:
-            self._logger.addHandler(logging.FileHandler(logfile))
+            self._file_handler = logging.FileHandler(logfile, mode='a', encoding='utf-8')
+            self._file_handler.setFormatter(EzpylogFormatter())
+            self._logger.addHandler(self._file_handler)
 
         self._logger.setLevel(min_level)
 
@@ -156,22 +171,23 @@ def loggerdemo():
 
     a = 1234567
 
-    logger = Logger("TestLogger", min_level=logging.DEBUG)
+    logger = Logger("TestLogger", min_level=logging.DEBUG, logfile="./src/ezpylog/log.txt")
     logger.log("Debug message\non\nmultiple\nline", logging.DEBUG)
     logger.log("Info message")
     logger.log("Warning message", logging.WARNING)
     logger.log(f"Error message {a}", logging.ERROR)
     logger.log("Critical message", logging.CRITICAL)
+    logger.debug({})
 
-    print()
+    print("", flush=True)
 
-    logger2 = Logger(__name__, logging.WARNING,)
+    logger2 = Logger(__name__, logging.WARNING,
+                     color_on_console=False, logfile="./src/ezpylog/log.txt")
     logger2.log("Debug message", logging.DEBUG)
     logger2.log("Info message", logging.INFO)
     logger2.log("Warning message", logging.WARNING)
     logger2.log(f"Error message {a}", logging.ERROR)
     logger2.log("Critical message", logging.CRITICAL)
-    logger.debug({})
     print()
 
 
