@@ -144,7 +144,7 @@ class EzpylogFormatter(logging.Formatter):
 
 
 class Logger(object):
-    def __init__(self, name=None,  min_level: int = logging.WARNING, logfile: str = None, color_on_console: bool = True):
+    def __init__(self, name=None,  min_level: int = logging.WARNING, logfile: str = None, logfile_level=None, color_on_console: bool = True):
         """ Initialize the logger.
         :param `min_level`: The minimum level of log to be displayed.
         :param `logfile`: The file to log to.
@@ -169,6 +169,8 @@ class Logger(object):
             self._file_handler = logging.FileHandler(
                 logfile, mode='a', encoding='utf-8')
             self._file_handler.setFormatter(EzpylogFormatter())
+            self._file_handler.setLevel(
+                logfile_level if logfile_level is not None else min_level)
             self._logger.addHandler(self._file_handler)
 
         self._logger.setLevel(min_level)
