@@ -7,8 +7,6 @@ Using pip :
 
 ## How to use ?
 ### Import :
-Import logger.py the way you want, personnaly I do : 
-
 ```python
 from ezpylog import Logger, LogLevel
 ```
@@ -25,23 +23,31 @@ LogLevel.CRITICAL
 
 ### Initialisation :
 ```python
-logger = Logger(min_level = LogLevel.INFO, context = "", inf_file="stdout", error_file="stderr")
+logger = Logger(name=None,  min_level: int = logging.WARNING, logfile: str = None, logfile_level=None, color_on_console: bool = True)
 ```
-
-- `min_level` is a `LogLevel` enum and filters log messages on the console (ex : `WARNING` will not print `INFO` messages). Default is `INFO`
-- `context` is the logging context, you can use `"main()"` if you use it in `__main__` for example. Default is `""`
-- `inf_file` is the name of your output file  for `DEBUG`,`INFO` and `DEBUG` messages. Default is `stdout`
-- `error_file` is the name of your output file  for `ERROR` and `CRITICAL` messages. Default is `stderr`
+- `name` is the name of the logger. If not set, the name of the module will be used.
+- `min_level` is a `LogLevel` enum and filters log messages on the console (ex : `WARNING` will not print `INFO` messages). Default is `WARNING`.
+- `context` is the logging context, you can use `"main()"` if you use it in `__main__` for example. Default is `""`.
+- `logfile` is the name of your optional log file for `DEBUG`,`INFO` and `DEBUG` messages. Default is `None` (no log file).
+- `logfile_level` is a `LogLevel` enum and filters log messages in the log file (ex : `WARNING` will not print `INFO` messages). Default is `WARNING`.
+- `color_on_console` is a boolean to enable or disable color on the console. Default is `True`.
 
 ### logging : 
 ```python
 logger.log(msg)
 # or
 logger.log(msg, level)
-# or
-logger.log(msg, level, subcontext)
 ```
-with default `level = LogLevel.INFO` and `subcontext = ""`
+with default `level = LogLevel.INFO`.
+
+You can call the loglevel corresonding function too :
+```python
+logger.debug(msg)
+logger.info(msg)
+logger.warning(msg)
+logger.error(msg)
+logger.critical(msg)
+```
 
 ## Example :
 You can find this exemple by calling `Logger.loggerdemo()`
