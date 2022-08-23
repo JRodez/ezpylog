@@ -23,7 +23,11 @@ LogLevel.CRITICAL
 
 ### Initialisation :
 ```python
-logger = Logger(name=None,  min_level: int = logging.WARNING, logfile: str = None, logfile_level=None, color_on_console: bool = True)
+logger = Logger(name=None,  
+				min_level: int = logging.WARNING, 
+				logfile: str = None, 
+				logfile_level=None, 
+				color_on_console: bool = True)
 ```
 - `name` is the name of the logger. If not set, the name of the module will be used.
 - `min_level` is a `LogLevel` enum and filters log messages on the console (ex : `WARNING` will not print `INFO` messages). Default is `WARNING`.
