@@ -1,4 +1,5 @@
 # Copyright 2022, JRodez <jeremierodez@outlook.com>
+import json
 import os
 from platform import python_version
 import inspect
@@ -66,7 +67,7 @@ class colors:
     ENDC = '\033[0m'
 
 
-SUPPORTED_TYPES = [str, dict]
+SUPPORTED_TYPES = (str, dict)
 
 
 def dict_to_str(collection: dict, indent=0):
@@ -144,10 +145,13 @@ class EzpylogFormatter(logging.Formatter):
 
 
 class Logger(object):
-    def __init__(self, name=None,  min_level: int = logging.WARNING, logfile: str = None, logfile_level=None, color_on_console: bool = True):
+    def __init__(self, name=None,  min_level: int = logging.WARNING, logfile: str = None, logfile_level=None, color_on_console: bool = True, stacklevel=2):
         """ Initialize the logger.
         :param `min_level`: The minimum level of log to be displayed.
         :param `logfile`: The file to log to.
+        :param `logfile_level`: The minimum level of log to be written to the logfile.
+        :param `color_on_console`: Whether to color the log on the console.
+        :param `stacklevel`: The stacklevel to use when logging (disabled with python <3.8).
         """
         if not isinstance(min_level, int):
             raise ValueError('min_level must be a int')
@@ -174,6 +178,7 @@ class Logger(object):
             self._logger.addHandler(self._file_handler)
 
         self._logger.setLevel(min_level)
+        self.stacklevel = stacklevel
 
     def set_level(self, level: int):
         """ Set the minimum level of log to be displayed.
@@ -188,13 +193,13 @@ class Logger(object):
         :param `context`: The context of the message.
         """
 
-        if type(msg) not in SUPPORTED_TYPES:
+        if not isinstance(msg, SUPPORTED_TYPES):
             try:
                 text = str(msg)
             except:
-                raise ValueError(
+                raise TypeError(
                     f"msg must be {SUPPORTED_TYPES.join(', ')} or convertable to a string")
-        elif type(msg) is dict:
+        elif isinstance(msg, dict):
             text = dict_to_str(msg)
         else:
             text = msg
@@ -204,7 +209,8 @@ class Logger(object):
             if OLD_PYTHON:
                 self._logger.log(level, f"{space}{line}")
             else:
-                self._logger.log(level, f"{space}{line}", stacklevel=2)
+                self._logger.log(
+                    level, f"{space}{line}", stacklevel=self.stacklevel)
 
     def getLogger(self):
         return self._logger
