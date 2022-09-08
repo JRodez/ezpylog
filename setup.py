@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='ezpylog',
-    version='2.1.0',
+    version='2.1.1',
     license='GPLv3',
     author="Jérémie Rodez",
     author_email='jeremierodez@outlook.com',
