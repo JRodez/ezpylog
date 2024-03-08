@@ -5,7 +5,8 @@ __pycache__/
 
 # C extensions
 *.so
-
+.envrc
+shell.nix
 # Distribution / packaging
 .Python
 build/
