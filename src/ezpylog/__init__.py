@@ -228,7 +228,6 @@ class EzpylogColoredFormatter(logging.Formatter):
             record.funcName = get_caller_name()[1]
             # print(record.funcName,flush=True)
             print(get_caller_name(deepness=4), flush=True)
-
         record.levelname = self.LOG_LEVEL_COLOR.get(record.levelname.upper()).get(
             "label"
         )
@@ -245,11 +244,19 @@ class EzpylogFormatter(logging.Formatter):
         formatter = logging.Formatter(self.FORMAT, "%d-%m-%y %H:%M:%S")
         return formatter.format(record)
 
+LOGGERS={}
+def getLogger(name=__name__,*args, **kwargs):
+    if name in LOGGERS:
+        return LOGGERS[name]
+    else:
+        LOGGERS[name]=Logger(name,*args, **kwargs)
+    return LOGGERS[name]
+
 
 class Logger(object):
     def __init__(
         self,
-        name=None,
+        name=__name__,
         min_level: int = logging.INFO,
         logfile: str = None,
         logfile_level=None,
@@ -267,33 +274,35 @@ class Logger(object):
         """
         if not isinstance(min_level, int):
             raise ValueError("min_level must be a int")
+        self.name = name
         self._logger: logging.Logger = (
             logging.getLogger() if name is None else logging.getLogger(name)
         )
 
         if OLD_PYTHON:
             self._logger.findCaller = findCallerPatch
+            
+        if not self._logger.hasHandlers():
+            self._handler = logging.Handler()
+            self._handler.setFormatter(EzpylogFormatter())
+            self._stream = sys.stderr if not to_stdout else sys.stdout
+            self.stream_handler = logging.StreamHandler(self._stream)
+            self.stream_handler.setFormatter(
+                EzpylogColoredFormatter(compact=compact, ezlogger=self)
+            ) if color_on_console else self.stream_handler.setFormatter(EzpylogFormatter())
+            self._logger.addHandler(self.stream_handler)
+            self._handlers = [self._handler, self.stream_handler]
 
-        self._handler = logging.Handler()
-        self._handler.setFormatter(EzpylogFormatter())
-        self._stream = sys.stderr if not to_stdout else sys.stdout
-        self.stream_handler = logging.StreamHandler(self._stream)
-        self.stream_handler.setFormatter(
-            EzpylogColoredFormatter(compact=compact, ezlogger=self)
-        ) if color_on_console else self.stream_handler.setFormatter(EzpylogFormatter())
-        self._logger.addHandler(self.stream_handler)
-        self._handlers = [self._handler, self.stream_handler]
-
-        if logfile is not None:
-            self._file_handler = logging.FileHandler(
-                logfile, mode="a", encoding="utf-8"
-            )
-            self._file_handler.setFormatter(EzpylogFormatter())
-            self._file_handler.setLevel(
-                logfile_level if logfile_level is not None else min_level
-            )
-            self._logger.addHandler(self._file_handler)
-            self._handlers.append(self._file_handler)
+            if logfile is not None:
+                self._file_handler = logging.FileHandler(
+                    logfile, mode="a", encoding="utf-8"
+                )
+                self._file_handler.setFormatter(EzpylogFormatter())
+                self._file_handler.setLevel(
+                    logfile_level if logfile_level is not None else min_level
+                )
+                self._logger.addHandler(self._file_handler)
+                self._handlers.append(self._file_handler)
 
         self._logger.setLevel(min_level)
         self.stacklevel = stacklevel
@@ -311,7 +320,6 @@ class Logger(object):
         :param `level`: The level of the message.
         :param `context`: The context of the message.
         """
-
         if not isinstance(msg, SUPPORTED_TYPES):
             try:
                 text = str(msg)
